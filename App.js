@@ -1,189 +1,419 @@
 import * as React from 'react';
-import { Text, View, StyleSheet, Button, TextInput } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { FlatList, ScrollView, TouchableOpacity } from 'react-native';
-import { useEffect, useState } from 'react';
-import Constants from 'expo-constants';
-import { createDrawerNavigator } from '@react-navigation/drawer';
+import { useState, useEffect } from 'react';
+import {
+  FlatList,
+  ActivityIndicator,
+  TouchableOpacity,
+  Button,
+  Text,
+  View,
+  StyleSheet,
+  TextInput,
+} from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Input } from 'react-native-elements';
+import {
+  createDrawerNavigator,
+  DrawerContentScrollView,
+  DrawerItemList,
+  DrawerItem,
+} from '@react-navigation/drawer';
 
-export default function App() {
-  const [data, setData] = useState();
-  const [favorites,setFavorites] = useState(['Pakistan'])
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import Constants from 'expo-constants';
 
-  const worldApi = () => {
+const World = () => {
+  const [getCovid, setCovid] = useState();
+  const [getPop, setPop] = useState();
+  const [getData, setData] = useState();
 
-    fetch("https://world-population.p.rapidapi.com/worldpopulation", {
-	"method": "GET",
-	"headers": {
-		"x-rapidapi-host": "world-population.p.rapidapi.com",
-		"x-rapidapi-key": "4495e7e706mshc177c614d5b6cd3p1cf73ajsnd3ea3543af90"
-	}
-})
+  const getDataFromAPI = async () => {
+    fetch('https://covid-19-data.p.rapidapi.com/totals', {
+      method: 'GET',
+      headers: {
+        'x-rapidapi-key": "4495e7e706mshc177c614d5b6cd3p1cf73ajsnd3ea3543af90',
+        'x-rapidapi-host': 'covid-19-data.p.rapidapi.com',
+      },
+    })
       .then((response) => response.json())
-      .then((json) => {
-        setData(json);
+      .then((result) => {
+        console.log(result);
+        setCovid(result);
+      })
+      .catch((error) => {
+        console.log('Error: ', error);
       });
   };
-  
-  function WorldwideStatistics({ navigation }) {
-    return (
-      <View style={styles.container}>
-          <View>
-            <Text>
-              Total Population :
-              {data != undefined ? data.body.world_population : ''}
-            </Text>
-            <Text>
-              Confirmed Cases %:{' '}
-              {data != undefined
-                ? ((278607203 * 100) / data.body.world_population)
-                : ''}
-            </Text>
-            <Text>
-              Recovered Cases %:{' '}
-              {data != undefined
-                ? ((249380419 * 100) / data.body.world_population)
-                : ''}
-            </Text>
-            <Text>
-              Total Deaths %:{' '}
-              {data != undefined
-                ? ((5403154 * 100) / data.body.world_population)
-                : ''}
-            </Text>
-          </View>
-          <Button title="Fetch data" onPress={worldApi} />
-      </View>
-    );
-  }
-  
-  const CountryStatistics = ({ route, navigation }) => {
-    const { data } = route.params;
-    const [countryData,setCountryData] = useState()
-    const [fav,setFav] = useState(false)
-    
-    useEffect(() => {
-      fetch(`https://covid-19-data.p.rapidapi.com/country?name=${data}`, {
-        method: 'GET',
-        headers: {
-          "x-rapidapi-host": "covid-19-data.p.rapidapi.com",
-		"x-rapidapi-key": "4495e7e706mshc177c614d5b6cd3p1cf73ajsnd3ea3543af90",
-        },
-      })
-        .then((response) =>response.json())
-        .then((json) => {
-          setCountryData(json)
-        });
-    },[data]);
 
-    return(
-      <View style={styles.container}>
-        
-        <Text>Country Name: {countryData != undefined ? countryData[0].country : ''}</Text>
-        <Text>Confirmed Cases: {countryData != undefined ? countryData[0].confirmed : ''}</Text>
-        <Text>Recovered Cases: {countryData != undefined ? countryData[0].recovered : ''}</Text>
-        <Text>Critical Cases: {countryData != undefined ? countryData[0].critical : ''}</Text>
-        <Text>Total Deaths: {countryData != undefined ? countryData[0].deaths : ''}</Text>
-      </View>
-    ); 
+  const getDataFromAPI2 = async () => {
+    fetch('https://world-population.p.rapidapi.com/worldpopulation', {
+      method: 'GET',
+      headers: {
+        'x-rapidapi-key": "4495e7e706mshc177c614d5b6cd3p1cf73ajsnd3ea3543af90',
+        'x-rapidapi-host': 'world-population.p.rapidapi.com',
+      },
+    })
+      .then((response) => response.json())
+      .then((result) => {
+        console.log(result.body.world_population);
+        setPop(result.body.world_population);
+      })
+      .catch((error) => {
+        console.log('Error: ', error);
+      });
   };
 
-  function CountryStatsScreen({ navigation }) {
-    const [countriesList, setCountriesList] = useState([]);
-    const [searchCountry, setSearchCountry] = useState([]);
-    const [search, setSearch] = useState('');
+  useEffect(() => {
+    getDataFromAPI();
+  }, [setCovid]);
 
-    const UserSearch = (val) => {
-      setSearch(val);
-      setSearchCountry(countriesList.filter((item) => item.includes(val)));
-    };
+  useEffect(() => {
+    getDataFromAPI2();
+  }, [setPop]);
 
-    useEffect(() => {
-      fetch('https://world-population.p.rapidapi.com/allcountriesname', {
-        method: 'GET',
-        headers: {
-          "x-rapidapi-host": "world-population.p.rapidapi.com",
-		      "x-rapidapi-key": "4495e7e706mshc177c614d5b6cd3p1cf73ajsnd3ea3543af90"
-        },
-      })
-        .then((response) => response.json())
-        .then((json) => {
-          setCountriesList(json.body.countries);
-          setSearchCountry(json.body.countries);
-        });
-    }, []);
+  if (getCovid && getPop) {
     return (
       <>
-        <View style={styles.countryList}>
-          <TextInput
-            placeholder="Search Country"
-            style={styles.textInput}
-            onChangeText={UserSearch}
-          />
+        <View style={styles.container}>
           <FlatList
-            style={{ width: '80%' }}
-            data={searchCountry}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() =>
-                  navigation.navigate('CountryStatistics', { data: item })
-                }
-                >
-                <Text>{item}</Text>
-              </TouchableOpacity>
+            refreshing={false}
+            onRefresh={getDataFromAPI}
+            keyExtractor={(item, index) => item.key}
+            data={getCovid}
+            renderItem={({ item, index }) => (
+              <View>
+                <Text style={styles.card}>{getPop}</Text>
+                <Text style={styles.label}>Total World Population</Text>
+
+                <Text style={[styles.card, { backgroundColor: 'gold' }]}>
+                  {item.confirmed}
+                </Text>
+
+                <Text style={styles.label}>Total Cases</Text>
+                <Text style={styles.label}>
+                  {((item.confirmed / getPop) * 100).toFixed(3)}%
+                </Text>
+
+                <Text style={[styles.card, { backgroundColor: 'darkorange' }]}>
+                  {item.recovered}
+                </Text>
+                <Text style={styles.label}>Recovered</Text>
+                <Text style={styles.label}>
+                  {((item.recovered / getPop) * 100).toFixed(3)}%
+                </Text>
+
+                <Text style={[styles.card, { backgroundColor: 'firebrick' }]}>
+                  {item.deaths}
+                </Text>
+                <Text style={styles.label}>Total Deaths</Text>
+                <Text style={styles.label}>
+                  {((item.deaths / getPop) * 100).toFixed(3)}%
+                </Text>
+
+                <Text
+                  style={[
+                    styles.label,
+                    { backgroundColor: 'lightgrey', marginTop: 20 },
+                  ]}>
+                  Last Updated
+                </Text>
+
+                <Text style={[styles.label, { backgroundColor: 'lightgrey' }]}>
+                  {item.lastUpdate}
+                </Text>
+              </View>
             )}
           />
         </View>
       </>
     );
+  } else {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator color="#6545a4" size="large" />
+        <Text style={{ alignSelf: 'center' }}>Loading....</Text>
+      </View>
+    );
   }
+};
 
-  const Stack = createNativeStackNavigator();
-  const Drawer = createDrawerNavigator();
+const Countries = ({ navigation }) => {
+  const [getCountries, setCountries] = useState();
+  const [getText, setText] = useState();
+
+  const getDataFromAPI = async () => {
+    fetch('https://covid-19-data.p.rapidapi.com/help/countries', {
+      method: 'GET',
+      headers: {
+        'x-rapidapi-key': '4495e7e706mshc177c614d5b6cd3p1cf73ajsnd3ea3543af90',
+        'x-rapidapi-host': 'covid-19-data.p.rapidapi.com',
+      },
+    })
+      .then((response) => response.json())
+      .then((result) => {
+        var res = result.map((item) => {
+          return item.name;
+        });
+        setCountries(res);
+        setText(res);
+      })
+      .catch((error) => {
+        console.log('Error: ', error);
+      });
+  };
+
+ 
+  useEffect(
+    () => {
+      getDataFromAPI();
+    },
+    [setCountries],
+    
+  );
 
   return (
-    <>
-      <NavigationContainer>
-        <Drawer.Navigator initialRouteName="Worldwide Statistics
-        ">
-          <Drawer.Screen name="Worldwide Statistics" component={WorldwideStatistics} />
-          <Drawer.Screen name="List of all countries" component={CountryStatsScreen} />
-          <Stack.Screen
-            name="CountryStatistics"
-            component={CountryStatistics}
-            options={{
-              drawerItemStyle: { height: 0 },
+    <View>
+      <Input
+        placeholder="Enter Country Name"
+        style={{ padding: 10 }}
+        onChangeText={(v) => {
+          setText(v)
+        }}
+      />
+      <FlatList
+        refreshing={false}
+        onRefresh={getDataFromAPI}
+        keyExtractor={(item, index) => item.key}
+        data={getCountries}
+        renderItem={({ item, index }) => (
+          <TouchableOpacity
+            style={{
+              width: '100%',
+              padding: 10,
+              backgroundColor: 'lightgreen',
+              margin: 1,
             }}
-          />
-         
-        </Drawer.Navigator>
-      </NavigationContainer>
-    </>
+            onPress={() => {
+              navigation.navigate('Country Details', item);
+            }}>
+            <Text>{item}</Text>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
+  );
+};
+
+const CountryStats = ({ navigation, route }) => {
+  const [getData, setData] = useState();
+  const [getPop, setPop] = useState('Not Found');
+  
+
+  const getDataFromAPI = async () => {
+    fetch(
+      `https://covid-19-data.p.rapidapi.com/country?name=${encodeURIComponent(
+        route.params
+      )}`,
+      {
+        method: 'GET',
+        headers: {
+          'x-rapidapi-key':
+            'bbc0c72044msh8ff2f36a950ab26p14e44bjsn91e599057dc9',
+          'x-rapidapi-host': 'covid-19-data.p.rapidapi.com',
+        },
+      }
+    )
+      .then((response) => response.json())
+      .then((result) => {
+        console.log(result.confirmed);
+        setData(result);
+      })
+      .catch((error) => {
+        console.log('Error: ', error);
+      });
+  };
+
+  const getDataFromAPI2 = async () => {
+    fetch(
+      `https://world-population.p.rapidapi.com/population?country_name=${encodeURIComponent(
+        route.params
+      )}`,
+      {
+        method: 'GET',
+        headers: {
+          'x-rapidapi-key':
+            'bbc0c72044msh8ff2f36a950ab26p14e44bjsn91e599057dc9',
+          'x-rapidapi-host': 'world-population.p.rapidapi.com',
+        },
+      }
+    )
+      .then((response) => response.json())
+      .then((result) => {
+        console.log(result.body.population);
+        
+        setPop(result.body.population);
+      })
+      .catch((error) => {
+        console.log('Error: ', error);
+      });
+  };
+
+  useEffect(() => {
+    getDataFromAPI2();
+  }, [setPop]);
+
+  useEffect(() => {
+    getDataFromAPI();
+  }, [setData]);
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        refreshing={false}
+        onRefresh={getDataFromAPI}
+        keyExtractor={(item, index) => item.key}
+        data={getData}
+        renderItem={({ item, index }) => (
+          <View>
+            <Text
+              style={{
+                alignSelf: 'center',
+                fontWeight: 'bold',
+                fontSize: 30,
+                marginTop: 18,
+              }}>
+              {item.country}
+            </Text>
+            <Text style={styles.card}>{getPop}</Text>
+            <Text style={styles.label}>Total Population</Text>
+
+            <Text style={[styles.card, { backgroundColor: 'gold' }]}>
+              {item.confirmed}
+            </Text>
+
+            <Text style={styles.label}>Total Cases</Text>
+            <Text style={styles.label}>
+              {((item.confirmed / getPop) * 100).toFixed(3)}%
+            </Text>
+
+            <Text style={[styles.card, { backgroundColor: 'darkorange' }]}>
+              {item.recovered}
+            </Text>
+            <Text style={styles.label}>Recovered</Text>
+            <Text style={styles.label}>
+              {((item.recovered / getPop) * 100).toFixed(3)}%
+            </Text>
+
+            <Text style={[styles.card, { backgroundColor: 'firebrick' }]}>
+              {item.deaths}
+            </Text>
+            <Text style={styles.label}>Total Deaths</Text>
+            <Text style={styles.label}>
+              {((item.deaths / getPop) * 100).toFixed(3)}%
+            </Text>
+
+            <Text
+              style={[
+                styles.label,
+                { backgroundColor: 'grey', marginTop: 18 },
+              ]}>
+              Last Updated
+            </Text>
+
+            <Text style={[styles.label, { backgroundColor: 'grey' }]}>
+              {item.lastUpdate}
+            </Text>
+          </View>
+        )}
+      />
+    </View>
+  );
+};
+
+const FavCountries = ({ navigation }) => {
+  const [getCountries, setCountries] = useState();
+
+  useEffect(() => {
+    
+  }, [setCountries]);
+
+  return (
+    <View>
+      <FlatList
+        refreshing={false}
+        keyExtractor={(item, index) => item.key}
+        data={getCountries}
+        renderItem={({ item, index }) => (
+          <TouchableOpacity
+            style={{
+              width: '100%',
+              padding: 11,
+              backgroundColor: 'lightblue',
+              margin: 1,
+            }}
+            onPress={() => {
+              navigation.navigate('Country Details', item);
+            }}>
+            <Text>{item}</Text>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
+  );
+};
+
+const Stack = createNativeStackNavigator();
+const Drawer = createDrawerNavigator();
+
+function MyDrawer() {
+  return (
+    <Drawer.Navigator>
+      <Drawer.Screen name="World Stats" component={World} />
+      <Drawer.Screen name="Countries Stats" component={MyStack} />
+      <Drawer.Screen name="Favourite Countries" component={FavCountries} />
+    </Drawer.Navigator>
+  );
+}
+
+function MyStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen name="Countries" component={Countries} />
+      <Stack.Screen name="Country Details" component={CountryStats} />
+    </Stack.Navigator>
+  );
+}
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <MyDrawer />
+    </NavigationContainer>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
     paddingTop: Constants.statusBarHeight,
-    backgroundColor: '#ecf0f1',
-    padding: 8,
-  },
-  countryList: {
-    paddingTop: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 
-
-  textInput: {
-    borderWidth: 2,
-    borderColor: 'black',
-    padding: 5,
-    width: '80%',
+  card: {
+    fontWeight: 'bold',
+    backgroundColor: 'lightblue',
+    fontSize: 24,
+    width: 'fit-content',
+    padding: 27,
+    borderRadius: 45,
+    alignSelf: 'center',
+    marginTop: 18,
+  },
+  label: {
+    alignSelf: 'center',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
 });
